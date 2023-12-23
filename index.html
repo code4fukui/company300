@@ -1,0 +1,130 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>DCIダッシュボード</title>
+</head><body>
+<h1>DCIダッシュボード</h1>
+<select id=seltype></select>
+
+<main id=main></main>
+
+
+<footer>
+DATA: <a href=https://www.nri.com/jp/knowledge/report/lst/2023/cc/0419_1>野村総合研究所(NRI)による「DCIにみる都道府県別デジタル度」</a> → <a href=https://github.com/code4fukui/dci-stat>CSVデータ</a><br>
+</footer>
+
+
+<script type="module">
+import { makeTabularMapJapan } from "./makeTabularMapJapan.js";
+import { CSV } from "https://js.sabae.cc/CSV.js";
+
+const url = "https://code4fukui.github.io/dci-stat/dci.csv";
+const data = await CSV.fetchJSON(url);
+console.log(data);
+
+const types = ["DCI", "ネット利用", "デジタル公共サービス", "コネクティビティ", "人的資本"];
+for (const type of types) {
+  const opt = document.createElement("option");
+  opt.textContent = type;
+  seltype.appendChild(opt);
+}
+
+export const setRankByValue = (array) => {
+  array.sort((a, b) => b.value - a.value);
+  let bk = array[0].value;
+  array[0].rank = 1;
+  for (let i = 1; i < array.length; i++) {
+    if (array[i] == bk) {
+      array[i].rank = array[i - 1].rank;
+    } else {
+      array[i].rank = i + 1;
+    }
+  }
+};
+export const getMinMax = (array, name = "value") => {
+  let max = parseFloat(array[0][name]);
+  let min = max;
+  for (let i = 1; i < array.length; i++) {
+    const v = parseFloat(array[i][name]);
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  return { min, max };
+};
+
+const show = async () => {
+  main.innerHTML = "";
+  const type = seltype.value;
+  const data2 = data.map(i => ({ pref: i.都道府県, value: parseFloat(i[type])}));
+  setRankByValue(data2);
+  const { min, max } = getMinMax(data2);
+
+  main.appendChild(await makeTabularMapJapan((c, name) => {
+    const d = data2.find(i => i.pref == name);
+    if (!d) return;
+    c.innerHTML = `${name}<br>${d.rank}位<br>${d.value}`;
+
+    const n = (d.value - min) / (max - min);
+    const h = 210;
+    const s = 80;
+    const l = 97 - n * 47;
+    const col = `hsl(${h},${s}%,${l}%)`;
+    //const col = `rgba(200,50,50,${l / 100 * .5})`;
+    c.style.backgroundColor = col;
+    c.style.color = l > 70 ? "black" : "white";
+    c.onclick = () => {
+      const d0 = data.find(i => i.都道府県 == name);
+      const s = Object.entries(d0).map(i => `${i[0]}: ${i[1]}`).join("\n");
+      alert(s);
+    };
+  }));
+};
+show();
+seltype.oninput = () => show();
+
+</script>
+
+<style>
+body {
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+h1 {
+  background-color: hsl(210,80%,50%);
+  color: white;
+  font-size: 250%;
+  padding: .5em;
+  margin: 0;
+}
+footer {
+  background-color: hsl(210,80%,50%);
+  color: white;
+  font-size: 90%;
+  margin: 0;
+  padding: 1em;
+  position: fixed;
+  bottom: 0;
+  width: 100vw;
+}
+footer a {
+  color: white !important;
+}
+select {
+  font-size: 130%;
+  padding: .2em;
+  margin: .3em;
+}
+.tabularmap {
+  padding: .5em;
+}
+.tabularmap > div {
+  border: 2px solid black;
+  margin: 2px;
+  text-align: center;
+  padding: .2em .2em;
+}
+@media screen and (max-width: 450px) {
+  .tabularmap > div {
+    font-size: 2.7vw;
+  }
+}
+</style>
