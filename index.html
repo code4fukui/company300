@@ -1,15 +1,13 @@
 <!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
-<title>デジタル度ダッシュボード</title>
+<title>はばたく300社ダッシュボード 2023年度</title>
 </head><body>
-<h1>デジタル度ダッシュボード</h1>
-<select id=seltype></select>
-
+<h1>はばたく300社ダッシュボード 2023年度</h1>
 <main id=main></main>
-DCI = デジタル度
-
+<div id=divlist></div>
 
 <footer>
-DATA: <a href=https://www.nri.com/jp/knowledge/report/lst/2023/cc/0419_1>野村総合研究所(NRI)による「DCIにみる都道府県別デジタル度」</a> → <a href=https://github.com/code4fukui/dci-stat>CSVデータ</a><br>
+出典: <a href=https://www.chusho.meti.go.jp/keiei/sapoin/monozukuri300sha/2023/detail.html>2023年度 はばたく中小企業・小規模事業者300社 | 中小企業庁</a><br>
+DATA &amp; APP: <a href=https://github.com/code4fukui/company300/>src on GitHub</a><br>
 </footer>
 
 
@@ -17,27 +15,21 @@ DATA: <a href=https://www.nri.com/jp/knowledge/report/lst/2023/cc/0419_1>野村�
 import { makeTabularMapJapan } from "./makeTabularMapJapan.js";
 import { CSV } from "https://js.sabae.cc/CSV.js";
 
-const url = "https://code4fukui.github.io/dci-stat/dci.csv";
+const url = "./company300.csv";
 const data = await CSV.fetchJSON(url);
 console.log(data);
-
-const types = ["DCI", "ネット利用", "デジタル公共サービス", "コネクティビティ", "人的資本"];
-for (const type of types) {
-  const opt = document.createElement("option");
-  opt.textContent = type;
-  seltype.appendChild(opt);
-}
 
 export const setRankByValue = (array) => {
   array.sort((a, b) => b.value - a.value);
   let bk = array[0].value;
   array[0].rank = 1;
   for (let i = 1; i < array.length; i++) {
-    if (array[i] == bk) {
+    if (array[i].value == bk) {
       array[i].rank = array[i - 1].rank;
     } else {
       array[i].rank = i + 1;
     }
+    bk = array[i].value;
   }
 };
 export const getMinMax = (array, name = "value") => {
@@ -50,21 +42,43 @@ export const getMinMax = (array, name = "value") => {
   }
   return { min, max };
 };
+export const getMaxLength = (array, name = "value") => {
+  let max = array[0][name];
+  for (let i = 1; i < array.length; i++) {
+    const v = array[i][name];
+    if (v > max) max = v;
+  }
+  return max;
+};
 
 const show = async () => {
   main.innerHTML = "";
-  const type = seltype.value;
-  const data2 = data.map(i => ({ pref: i.都道府県, value: parseFloat(i[type])}));
+  const data2 = [];
+  for (const d of data) {
+    const o = data2.find(i => i.pref == d.pref);
+    if (!o) {
+      data2.push({
+        pref: d.pref,
+        list: [d],
+        value: 1,
+      });
+    } else {
+      o.list.push(d);
+      o.value++;
+    }
+  }
+  console.log(data2, data2.length)
+  //const max = getMaxLength(data2, "list");
+  const min = 0;
+  const max = getMaxLength(data2);
   setRankByValue(data2);
-  const { min, max } = getMinMax(data2);
-
   main.appendChild(await makeTabularMapJapan((c, name) => {
     const d = data2.find(i => i.pref == name);
     if (!d) return;
-    c.innerHTML = `${name}<br>${d.rank}位<br>${d.value}`;
+    c.innerHTML = `${name}<br>${d.rank}位<br>${d.value}社`;
 
     const n = (d.value - min) / (max - min);
-    const h = 210;
+    const h = 39;
     const s = 80;
     const l = 97 - n * 47;
     const col = `hsl(${h},${s}%,${l}%)`;
@@ -72,14 +86,19 @@ const show = async () => {
     c.style.backgroundColor = col;
     c.style.color = l > 70 ? "black" : "white";
     c.onclick = () => {
-      const d0 = data.find(i => i.都道府県 == name);
-      const s = Object.entries(d0).map(i => `${i[0]}: ${i[1]}`).join("\n");
-      alert(s);
+      const d0 = data2.find(i => i.pref == name);
+      const s = d0.list.map(i => {
+        if (i.url) {
+          return `<a href=${i.url}>${i.name}</a> (${i.category})<br>`;
+        } else {
+          return `${i.name} (${i.category})<br>`;
+        }
+      }).join("");
+      divlist.innerHTML = s;
     };
   }));
 };
 show();
-seltype.oninput = () => show();
 
 </script>
 
@@ -90,23 +109,24 @@ body {
   padding: 0;
   padding-bottom: 5em;
   font-family: sans-serif;
+  --bg-color: hsl(39, 93%, 49%);;
 }
 h1 {
-  background-color: hsl(210,80%,50%);
+  background-color: var(--bg-color);
   color: white;
   font-size: 200%;
   padding: .5em;
   margin: 0;
 }
 footer {
-  background-color: hsl(210,80%,50%);
+  background-color: var(--bg-color);
   color: white;
   font-size: 90%;
   margin: 0;
   padding: 1em;
-  position: fixed;
+  x-position: fixed;
   bottom: 0;
-  width: 100vw;
+  x-width: 100vw;
 }
 footer a {
   color: white !important;
@@ -124,6 +144,16 @@ select {
   margin: 2px;
   text-align: center;
   padding: .2em .2em;
+}
+#divlist {
+  border: 2px solid black;
+  margin: .5em;
+  padding: .5em;
+  text-align: left;
+  line-height: 1.6;
+}
+#divlist a {
+  color: gray !important;
 }
 @media screen and (max-width: 450px) {
   .tabularmap > div {
