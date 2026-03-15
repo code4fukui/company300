@@ -1,5 +1,7 @@
 # company300
 
+> 日本語のREADMEはこちらです: [README.ja.md](README.ja.md)
+
 A dashboard for the "300 Soaring SMEs and Small Businesses" in Japan for the year 2023.
 
 ## Demo
