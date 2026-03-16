@@ -4,9 +4,6 @@
 
 A dashboard for the "300 Soaring SMEs and Small Businesses" in Japan for the year 2023.
 
-## Demo
-[https://code4fukui.github.io/company300/](https://code4fukui.github.io/company300/)
-
 ## Features
 - Interactive map of Japan showing the number of companies per prefecture
 - Detailed list of companies with category and website links
@@ -16,10 +13,10 @@ A dashboard for the "300 Soaring SMEs and Small Businesses" in Japan for the yea
 None. This is a client-side JavaScript application.
 
 ## Usage
-The application can be accessed directly through the demo link above. No installation is required.
+The application can be accessed directly. No installation is required.
 
 ## Data / API
 The data is scraped from the official [Ministry of Economy, Trade and Industry (METI) website](https://www.chusho.meti.go.jp/keiei/sapoin/monozukuri300sha/2023/detail.html).
 
 ## License
-MIT License
+MIT License — see [LICENSE](LICENSE).
